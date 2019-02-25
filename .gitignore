@@ -1,0 +1,6 @@
+**/.idea/*
+**/dist/*
+coverage.html
+.env
+gin-bin
+**/tmp/*
