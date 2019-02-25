@@ -2,13 +2,13 @@ package antigate
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
-	"github.com/Sirupsen/logrus"
 )
 
 const (
 	createTaskBasePath = "createTask"
-	getTaskbasePath = "getTaskResult"
+	getTaskbasePath    = "getTaskResult"
 	//taskBasePath = "test"
 )
 
@@ -22,20 +22,20 @@ type TaskResponse struct {
 	ErrorCode        string `json:"errorCode"`
 	ErrorDescription string `json:"errorDescription"`
 
-	Status     string  `json:"status"`
+	Status     string `json:"status"`
 	Cost       string `json:"cost"`
-	FromIp     string  `json:"ip"`
-	SolveCount int64   `json:"solveCount"`
-	CreateTime int64   `json:"createTime"`
-	EndTime    int64   `json:"endTime"`
+	FromIp     string `json:"ip"`
+	SolveCount int64  `json:"solveCount"`
+	CreateTime int64  `json:"createTime"`
+	EndTime    int64  `json:"endTime"`
 
-	Solution   Solution  `json:"solution"`
+	Solution Solution `json:"solution"`
 }
 
 type Solution struct {
-	Text        string `json:"text"`
-	GoogleResponse	string `json:"gRecaptchaResponse"`
-	Url 		string `json:"url"`
+	Text           string `json:"text"`
+	GoogleResponse string `json:"gRecaptchaResponse"`
+	Url            string `json:"url"`
 }
 
 type Task struct {
@@ -112,8 +112,8 @@ func (s TaskService) GetWork(taskId int64) (TaskResponse, error) {
 	return taskResponse, nil
 }
 
-func (s TaskService) GetKeyForGoogle(task Task) (string, error)  {
-	responseTaskId, err := s.client.Task.PutToWork( task )
+func (s TaskService) GetKeyForGoogle(task Task) (string, error) {
+	responseTaskId, err := s.client.Task.PutToWork(task)
 	if err != nil {
 		return "", err
 	}
@@ -121,9 +121,9 @@ func (s TaskService) GetKeyForGoogle(task Task) (string, error)  {
 	responseString := ""
 
 	for sleep := 20; sleep > 0; sleep-- {
-		logrus.Debugf( "wait %d sec", sleep )
+		logrus.Debugf("wait %d sec", sleep)
 		time.Sleep(time.Duration(sleep) * time.Second)
-		response, err := s.client.Task.GetWork( responseTaskId)
+		response, err := s.client.Task.GetWork(responseTaskId)
 		if err != nil {
 			return "", err
 		}
