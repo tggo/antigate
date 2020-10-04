@@ -3,6 +3,9 @@ package main
 
 import (
 	"fmt"
+
+	"go.uber.org/zap"
+
 	"github.com/tggo/antigate"
 )
 
@@ -11,8 +14,9 @@ func main() {
 	config := &antigate.Config{
 		ClientKey: "ccbdc36ec3274cf8fe7b49fc2d8733e0",
 	}
+	logger, _ := zap.NewProduction()
 
-	client := antigate.NewClient(config)
+	client := antigate.NewClient(config, logger)
 
 	balance, _ := client.Balance.Get()
 	fmt.Printf("%v", balance)

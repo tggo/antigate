@@ -6,7 +6,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-		)
+
+	"go.uber.org/zap"
+)
 
 const (
 	libraryVersion = "0.1.0"
@@ -40,19 +42,20 @@ type Client struct {
 	Config *Config
 
 	Balance BalanceService
-	Task TaskService
+	Task    TaskService
+	logger  *zap.Logger
 }
 
 type request struct {
 	ClientKey    string `json:"clientKey,omitempty"`
 	TaskId       int64  `json:"taskId,omitempty"`
 	SoftId       int64  `json:"softId,omitempty"`
-	Task 		 *Task   `json:"task,omitempty"`
+	Task         *Task  `json:"task,omitempty"`
 	LanguagePool string `json:"languagePool,omitempty"`
 	CallbackUrl  string `json:"callbackUrl,omitempty"`
 }
 
-func NewClient(config *Config) *Client {
+func NewClient(config *Config, logger *zap.Logger) *Client {
 
 	// Default to API Version 2
 	if config.APIVersion == "" {
@@ -63,10 +66,10 @@ func NewClient(config *Config) *Client {
 	//add Version and SchoolID to URL Path
 	//baseURL.Path = config.SchoolID + "/" + config.APIVersion + "/"
 
-	c := &Client{client: http.DefaultClient, BaseURL: baseURL, UserAgent: userAgent, Config: config}
+	c := &Client{client: http.DefaultClient, BaseURL: baseURL, UserAgent: userAgent, Config: config, logger: logger}
 
 	c.Balance = BalanceService{client: c}
-	c.Task =TaskService{client:c}
+	c.Task = TaskService{client: c, logger: logger}
 	return c
 }
 
@@ -84,12 +87,11 @@ func (c *Client) NewRequest(urlStr string, taskId int64, task Task) (*http.Reque
 	var body io.Reader
 
 	r := request{ClientKey: c.Config.ClientKey}
-	if taskId != 0  {
+	if taskId != 0 {
 		r.TaskId = taskId
 	} else {
 		r.Task = &task
 	}
-
 
 	b, err := json.Marshal(r)
 	if err != nil {
@@ -101,19 +103,8 @@ func (c *Client) NewRequest(urlStr string, taskId int64, task Task) (*http.Reque
 	if err != nil {
 		return nil, err
 	}
-
-	//req.SetBasicAuth(c.Config.Username, c.Config.Password)
-
 	req.Header.Add("Accept", mediaType)
 	req.Header.Add("User-Agent", userAgent)
-
-	//// Save a copy of this request for debugging.
-	//requestDump, err := httputil.DumpRequest(req, true)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//fmt.Println(string(requestDump))
-
 
 	return req, nil
 }
@@ -125,36 +116,9 @@ func (c *Client) Do(req *http.Request, into interface{}) (*http.Response, error)
 		return nil, err
 	}
 
-
-	//responsetDump, err := httputil.DumpResponse(resp, true)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-	//fmt.Println(string(responsetDump))
-
 	if err := json.NewDecoder(resp.Body).Decode(into); err != nil {
 		return nil, err
 	}
 
 	return resp, nil
 }
-
-//func addOptions(basePath, format string, opt *ListOptions) string {
-//	// Specify URL Parameters
-//	params := url.Values{}
-//	for k, v := range opt.Params {
-//		params.Add(k, v)
-//	}
-//	// only set format if not already specified by options
-//	if _, ok := opt.Params["format"]; !ok {
-//		params.Set("format", format)
-//	}
-//
-//	// Sets the page which should be retrieved.
-//	if page := opt.Page; opt.Page != 0 {
-//		params.Set("page", fmt.Sprintf("%v", page))
-//	}
-//
-//	path := basePath + "?" + params.Encode()
-//	return path
-//}

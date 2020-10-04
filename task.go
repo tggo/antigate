@@ -2,18 +2,19 @@ package antigate
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const (
 	createTaskBasePath = "createTask"
-	getTaskbasePath    = "getTaskResult"
-	//taskBasePath = "test"
+	getTaskBasePath    = "getTaskResult"
 )
 
 type TaskService struct {
 	client *Client
+	logger *zap.Logger
 }
 
 type TaskResponse struct {
@@ -91,7 +92,7 @@ func (s TaskService) PutToWork(task Task) (int64, error) {
 
 func (s TaskService) GetWork(taskId int64) (TaskResponse, error) {
 	// build url
-	path := getTaskbasePath
+	path := getTaskBasePath
 
 	var taskResponse = TaskResponse{}
 	req, err := s.client.NewRequest(path, taskId, Task{})
@@ -121,7 +122,7 @@ func (s TaskService) GetKeyForGoogle(task Task) (string, error) {
 	responseString := ""
 
 	for sleep := 20; sleep > 0; sleep-- {
-		logrus.Debugf("wait %d sec", sleep)
+		s.logger.Debug("wait", zap.Int("second", sleep))
 		time.Sleep(time.Duration(sleep) * time.Second)
 		response, err := s.client.Task.GetWork(responseTaskId)
 		if err != nil {
@@ -129,7 +130,7 @@ func (s TaskService) GetKeyForGoogle(task Task) (string, error) {
 		}
 
 		if response.Status != "processing" {
-			logrus.Debugf("we have response %s", response.Status)
+			s.logger.Debug("we have response", zap.String("status", response.Status))
 			sleep = -10
 		}
 
